@@ -1,0 +1,53 @@
+# Maven
+# Build your Java project and run tests with Apache Maven.
+# Add steps that analyze code, save build artifacts, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/java
+
+trigger:
+  - main
+# Or the specific branch you want to trigger on
+
+pool: devlab2
+
+steps:
+# Stage 1: Build
+- script: echo "Stage 1 - Setting up Java version."
+  displayName: 'Setup Java Version'
+
+- task: Maven@3
+  displayName: 'Maven Build and Test'
+  inputs:
+    mavenPomFile: 'pom.xml'
+    mavenOptions: '-Xmx3072m'
+    javaHomeOption: 'JDKVersion'
+    jdkVersionOption: '1.8' # Assuming '1.8' for 'jdk8' as seen in similar pipelines
+    jdkArchitectureOption: 'x64'
+    publishJUnitResults: true
+    testResultsFiles: '**/surefire-reports/TEST-*.xml'
+    goals: 'package'
+
+# Stage 2: Publish Artifacts
+- script: echo "Stage 2 - Maven build and test completed successfully."
+  displayName: 'Build Success Message'
+
+- task: PublishBuildArtifacts@1
+  displayName: 'Publish Build Artifacts'
+  inputs:
+    PathtoPublish: '$(System.DefaultWorkingDirectory)/target'
+    ArtifactName: 'my-java-artifacts'
+    publishLocation: 'Container'
+
+# Stage 3: Test Results and Completion
+- script: echo "Stage 3 - Artifacts published successfully."
+  displayName: 'Artifacts Published Message'
+
+- task: PublishTestResults@2
+  displayName: 'Publish Test Results'
+  inputs:
+    testResultsFormat: 'JUnit' # Based on testResultsFiles from Maven task
+    testResultsFiles: '**/surefire-reports/TEST-*.xml'
+    failTaskOnFailedTests: true
+    searchFolder: '$(System.DefaultWorkingDirectory)'
+
+- script: echo "Regression test is successfully completed."
+  displayName: 'Completion Message'
